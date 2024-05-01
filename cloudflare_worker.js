@@ -8,6 +8,7 @@ async function fetchApi(sub, token, uri) {
 const routes = {
   "/courses": async function(sub, token) {
     let courses = await fetchApi(sub, token, "courses");
+    console.log(courses);
     let out = {};
     for (let c of courses) {
       if (!c.course_code) {
@@ -17,7 +18,7 @@ const routes = {
     }
     return out;
   },
-  
+
   "/missing": async function(sub, token) {
     let asgns = await fetchApi(sub, token, "missing_submissions");
     let out = {};
@@ -43,6 +44,11 @@ const routes = {
     }
 
     return out;
+  },
+
+  "/validate": async function(sub, token) {
+    let o = await fetchApi(sub, token, "courses");
+    return o.message == undefined && o.errors == undefined;
   }
 }
 
@@ -50,13 +56,14 @@ export default {
   async fetch(request, env, ctx) {
     let url = new URL(request.url);
     if (!routes[url.pathname]) {
-      let s = { status: 400 }
+      let s = { status: 404 }
       return new Response(JSON.stringify(s), s);
     }
     let sub = url.searchParams.get("sub");
     let token = url.searchParams.get("token");
     if (!sub || !token) {
-      return new Response("Subdomain and token required", { status: 400 });
+      let s = { status: 400 }
+      return new Response(JSON.stringify(s), s);
     }
     let res = await routes[url.pathname](sub, token);
     let corsheader = new Headers([["Access-Control-Allow-Origin", "*"]]);

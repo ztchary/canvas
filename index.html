@@ -1,29 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-  <title>Canvas</title>
-</head>
-<body>
-  <ul>
-    <left>
-      <li><a href="#">Home</a></li>
-      <li><a href="#">Home</a></li>
-      <li><a href="#">Home</a></li>
-      <li><a href="#">Home</a></li>
-    </left>
-    <right>
-      <li><a href="#">Home</a></li>
-      <li><a href="#">Home</a></li>
-      <li><a href="#">Home</a></li>
-      <li><a href="#">Home</a></li>
-    </right>
-  </ul>
-  <div class="content">
-
-  </div>
-  <script src="script.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Canvas</title>
+  </head>
+  <body>
+    <nav>
+      <div id="navleft">
+        <a onclick="home();" href="#">Home</a>
+        <a onclick="missing();" href="#">Missing</a>
+      </div>
+      <div id="navright"></div>
+    </nav>
+    <div class="content"></div>
+    <script src="script.js"></script>
+  </body>
 </html>
