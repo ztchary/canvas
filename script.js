@@ -1,7 +1,5 @@
 async function apiGet(tok, uri) {
-  let resp = await fetch(
-    `https://canvasapi.ztchary.com/${uri}?tok=${tok}`,
-  );
+  let resp = await fetch(`https://canvasapi.ztchary.com/${uri}?tok=${tok}`);
   return await resp.json();
 }
 
@@ -24,9 +22,9 @@ function setText(tag, data) {
 
 async function missingRefresh() {
   let content = clearContent();
-  let h1 = document.createElement("h1");
-  content.appendChild(h1);
-  setText(h1, "Loading");
+  let loading = document.createElement("div");
+  content.appendChild(loading);
+  loading.classList.add("loading");
   localStorage.tok;
   await renderMissing(localStorage.tok);
   let refresh = document.createElement("a");
@@ -43,10 +41,18 @@ async function renderMissing(tok) {
   if (courses.err || missing.err) {
     localStorage.clear();
     accessToken();
+    alert("Invalid access token");
     return;
   }
 
   let content = clearContent();
+
+  if (!missing) {
+    let h1 = document.createElement("h1");
+    content.appendChild(h1);
+    setText(h1, "No missing assignments");
+    return;
+  }
 
   for (let [cid, asgns] of Object.entries(missing)) {
     let h1 = document.createElement("h1");
@@ -58,8 +64,8 @@ async function renderMissing(tok) {
     setText(h1, courses[cid]);
     for (let asgn of asgns) {
       let tr = document.createElement("tr");
-      table.appendChild(tr);
       let a = document.createElement("a");
+      table.appendChild(tr);
       a.href = asgn.url;
       a.target = "_blank";
       setText(a, asgn.name);
@@ -72,6 +78,7 @@ async function renderMissing(tok) {
 
 async function accessToken() {
   let content = clearContent();
+
   let h1 = document.createElement("h1");
   setText(h1, "Canvas Access Token");
   content.appendChild(h1);
@@ -97,16 +104,14 @@ async function accessToken() {
     content.appendChild(tok);
     content.appendChild(document.createElement("br"));
     content.appendChild(submit);
-    setText(
-      p,
-      "Go to Canvas profile settings to generate an Access Token and enter it here.",
-    );
-    tok.placeholder = "1234~abcde...";
-    setText(submit, "Set Access Token");
+    setText(p, "Generate an Access Token (canvas settings) and enter it here.");
+    tok.placeholder = "1234~dQw4w9WgXcQ...";
+    tok.size = 69;
+    setText(submit, "Set Token");
     submit.onclick = async function () {
       let valid = await apiGet(tok.value, "validate");
       if (!valid) {
-        alert("Invalid Access Token");
+        alert("Invalid access token");
         return;
       }
       localStorage.setItem("tok", tok.value);
@@ -117,7 +122,7 @@ async function accessToken() {
 
 async function missing() {
   if (!localStorage.tok) {
-    alert("Set an Access Token first");
+    alert("Set an access token first");
     return;
   }
   missingRefresh();

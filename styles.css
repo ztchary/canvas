@@ -9,10 +9,15 @@ html, body {
 
 .content{
   background: #222;
-  width: 60%;
   padding: 20px 5%;
   min-height: 100%;
   margin: 0 auto;
+}
+
+@media screen and (min-width: 1000px) {
+  .content{
+    width: 60%;
+  }
 }
 
 code{
@@ -61,4 +66,37 @@ nav div a{
 
 nav div a:hover{
   background: #444;
+}
+
+input{
+  background: #333;
+  color: #eee;
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  font-family: "Courier New", Courier, monospace;
+}
+
+button{
+  margin: 10px 0;
+  background: #333;
+  color: #eee;
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+@keyframes spin{
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading{
+  width: 60px;
+  height: 60px;
+  border: 10px solid #eee;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
 }
