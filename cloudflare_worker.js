@@ -1,14 +1,16 @@
-async function fetchApi(sub, token, uri) {
-  let headers = new Headers([["Authorization", `Bearer ${token}`]]);
-  let url = new URL(`https://${sub}.instructure.com/api/v1/users/self/${uri}?per_page=1000`);
+async function fetchApi(tok, uri) {
+  let headers = new Headers([["Authorization", `Bearer ${tok}`]]);
+  let url = new URL(`https://canvas.instructure.com/api/v1/users/self/${uri}?per_page=1000`);
   let resp = await fetch(url, { headers: headers });
   return await resp.json();
 }
 
 const routes = {
-  "/courses": async function(sub, token) {
-    let courses = await fetchApi(sub, token, "courses");
-    console.log(courses);
+  "/courses": async function(tok) {
+    let courses = await fetchApi(tok, "courses");
+    if (courses.errors) {
+      return {"err": true};
+    }
     let out = {};
     for (let c of courses) {
       if (!c.course_code) {
@@ -19,8 +21,11 @@ const routes = {
     return out;
   },
 
-  "/missing": async function(sub, token) {
-    let asgns = await fetchApi(sub, token, "missing_submissions");
+  "/missing": async function(tok) {
+    let asgns = await fetchApi(tok, "missing_submissions");
+    if (asgns.errors) {
+      return {"err": true};
+    }
     let out = {};
 
     for (let a of asgns) {
@@ -46,8 +51,8 @@ const routes = {
     return out;
   },
 
-  "/validate": async function(sub, token) {
-    let o = await fetchApi(sub, token, "courses");
+  "/validate": async function(tok) {
+    let o = await fetchApi(tok, "courses");
     return o.message == undefined && o.errors == undefined;
   }
 }
@@ -59,13 +64,12 @@ export default {
       let s = { status: 404 }
       return new Response(JSON.stringify(s), s);
     }
-    let sub = url.searchParams.get("sub");
-    let token = url.searchParams.get("token");
-    if (!sub || !token) {
+    let tok = url.searchParams.get("tok");
+    if (!tok) {
       let s = { status: 400 }
       return new Response(JSON.stringify(s), s);
     }
-    let res = await routes[url.pathname](sub, token);
+    let res = await routes[url.pathname](tok);
     let corsheader = new Headers([["Access-Control-Allow-Origin", "*"]]);
     return new Response(JSON.stringify(res), { headers: corsheader });
   }

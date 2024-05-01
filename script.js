@@ -1,11 +1,12 @@
-async function apiGet(sub, token, uri) {
+async function apiGet(tok, uri) {
   let resp = await fetch(
-    `https://canvasapi.ztchary.com/${uri}?sub=${sub}&token=${token}`,
+    `https://canvasapi.ztchary.com/${uri}?tok=${tok}`,
   );
   return await resp.json();
 }
 
 function clearContent() {
+  document.querySelector("#navright").innerHTML = "";
   let content = document.querySelector(".content");
   content.innerHTML = "";
   return content;
@@ -21,9 +22,29 @@ function setText(tag, data) {
   tag.appendChild(document.createTextNode(data));
 }
 
-async function renderMissing(sub, token) {
-  const courses = await apiGet(sub, token, "courses");
-  const missing = await apiGet(sub, token, "missing");
+async function missingRefresh() {
+  let content = clearContent();
+  let h1 = document.createElement("h1");
+  content.appendChild(h1);
+  setText(h1, "Loading");
+  localStorage.tok;
+  await renderMissing(localStorage.tok);
+  let refresh = document.createElement("a");
+  document.querySelector("#navright").appendChild(refresh);
+  setText(refresh, "Refresh");
+  refresh.href = "#";
+  refresh.onclick = missingRefresh;
+}
+
+async function renderMissing(tok) {
+  const courses = await apiGet(tok, "courses");
+  const missing = await apiGet(tok, "missing");
+
+  if (courses.err || missing.err) {
+    localStorage.clear();
+    accessToken();
+    return;
+  }
 
   let content = clearContent();
 
@@ -49,100 +70,59 @@ async function renderMissing(sub, token) {
   }
 }
 
-function tokenIsSet() {
-  return localStorage.getItem("token") != null;
-}
-
-function getToken() {
-  let sub = localStorage.getItem("sub");
-  let token = localStorage.getItem("token");
-  return [sub, token];
-}
-
-async function home() {
+async function accessToken() {
   let content = clearContent();
-  document.querySelector("#navright").innerHTML = "";
   let h1 = document.createElement("h1");
-  setText(h1, "Canvas Viewer");
+  setText(h1, "Canvas Access Token");
   content.appendChild(h1);
   content.appendChild(document.createElement("hr"));
-  let h3 = document.createElement("h3");
-  setText(h3, "Access Token and Url");
-  content.appendChild(h3);
-  if (tokenIsSet()) {
-    let [sub, token] = getToken();
+  if (localStorage.tok) {
     let p1 = document.createElement("p");
     let p2 = document.createElement("p");
     let reset = document.createElement("button");
     content.appendChild(p1);
     content.appendChild(p2);
     content.appendChild(reset);
-    setText(p1, `Canvas Url: ${sub}.instructure.com`);
-    setText(p2, `Access Token: ${token.slice(0, 10)}...`);
+    setText(p2, `Access Token: ${localStorage.tok.slice(0, 10)}...`);
     setText(reset, "Reset");
     reset.onclick = () => {
-      localStorage.removeItem("sub");
-      localStorage.removeItem("token");
-      home();
+      localStorage.clear();
+      accessToken();
     };
   } else {
     let p = document.createElement("p");
-    let sub = document.createElement("input");
-    let token = document.createElement("input");
+    let tok = document.createElement("input");
     let submit = document.createElement("button");
     content.appendChild(p);
-    content.appendChild(sub);
-    content.appendChild(document.createElement("br"));
-    content.appendChild(token);
+    content.appendChild(tok);
     content.appendChild(document.createElement("br"));
     content.appendChild(submit);
     setText(
       p,
-      "Go to Canvas profile settings to generate an access token and enter it along with your canvas url here.",
+      "Go to Canvas profile settings to generate an Access Token and enter it here.",
     );
-    sub.placeholder = "abc.instructure.com";
-    token.placeholder = "1234~abcde...";
+    tok.placeholder = "1234~abcde...";
     setText(submit, "Set Access Token");
     submit.onclick = async function () {
-      if (
-        !sub.value.endsWith(".instructure.com") ||
-        token.value.length != 69 ||
-        token[4] == "~"
-      ) {
-        alert("Invalid Url or Access Token");
-        return;
-      }
-      let valid = await apiGet(sub.value.slice(0, 3), token.value, "validate");
+      let valid = await apiGet(tok.value, "validate");
       if (!valid) {
         alert("Invalid Url or Access Token");
         return;
       }
-      localStorage.setItem("sub", sub.value.slice(0, 3));
-      localStorage.setItem("token", token.value);
-      home();
+      localStorage.setItem("tok", tok.value);
+      accessToken();
     };
   }
 }
 
 async function missing() {
-  if (!tokenIsSet()) {
+  if (!localStorage.tok) {
     alert("Set an Access Token first");
     return;
   }
-  let refresh = document.createElement("a");
-  document.querySelector("#navright").appendChild(refresh);
-  setText(refresh, "Refresh");
-  refresh.onclick = async function () {
-    let content = clearContent();
-    let h1 = document.createElement("h1");
-    content.appendChild(h1);
-    setText(h1, "Loading");
-    let [sub, token] = getToken();
-    await renderMissing(sub, token);
-  };
-  refresh.onclick();
+  missingRefresh();
 }
 
 window.onload = function () {
-  home();
+  accessToken();
 };
