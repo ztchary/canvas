@@ -106,7 +106,7 @@ async function accessToken() {
     submit.onclick = async function () {
       let valid = await apiGet(tok.value, "validate");
       if (!valid) {
-        alert("Invalid Url or Access Token");
+        alert("Invalid Access Token");
         return;
       }
       localStorage.setItem("tok", tok.value);
