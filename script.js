@@ -3,6 +3,14 @@ async function apiGet(tok, uri) {
   return await resp.json();
 }
 
+function appendLoading(content) {
+  if (document.querySelector(".loading")) return;
+  let loading = document.createElement("div");
+  content.appendChild(loading);
+  loading.classList.add("loading");
+}
+
+
 function clearContent() {
   document.querySelector("#navright").innerHTML = "";
   let content = document.querySelector(".content");
@@ -20,37 +28,24 @@ function setText(tag, data) {
   tag.appendChild(document.createTextNode(data));
 }
 
-async function missingRefresh() {
-  let content = clearContent();
-  let loading = document.createElement("div");
-  content.appendChild(loading);
-  loading.classList.add("loading");
-  localStorage.tok;
-  await renderMissing(localStorage.tok);
-  let refresh = document.createElement("a");
-  document.querySelector("#navright").appendChild(refresh);
-  setText(refresh, "Refresh");
-  refresh.href = "#";
-  refresh.onclick = missingRefresh;
-}
-
-async function renderMissing(tok) {
+async function fetchMissing(tok) {
   const courses = await apiGet(tok, "courses");
   const missing = await apiGet(tok, "missing");
-
   if (courses.err || missing.err) {
-    localStorage.clear();
-    accessToken();
-    alert("Invalid access token");
-    return;
+    return courses.err + " , " + missing.err;
   }
+  localStorage.setItem("courses", JSON.stringify(courses));
+  localStorage.setItem("missing", JSON.stringify(missing));
+  return null;
+}
 
+async function renderMissing(courses, missing) {
   let content = clearContent();
 
   if (!missing) {
     let h1 = document.createElement("h1");
     content.appendChild(h1);
-    setText(h1, "No missing assignments");
+    setText(h1, "No missing assignments.");
     return;
   }
 
@@ -76,7 +71,7 @@ async function renderMissing(tok) {
   }
 }
 
-async function accessToken() {
+async function tabAccessToken() {
   let content = clearContent();
 
   let h1 = document.createElement("h1");
@@ -93,8 +88,10 @@ async function accessToken() {
     setText(p2, `Access Token: ${localStorage.tok.slice(0, 10)}...`);
     setText(reset, "Reset");
     reset.onclick = () => {
-      localStorage.clear();
-      accessToken();
+      localStorage.removeItem("tok");
+      localStorage.removeItem("courses");
+      localStorage.removeItem("missing");
+      tabAccessToken();
     };
   } else {
     let p = document.createElement("p");
@@ -108,26 +105,50 @@ async function accessToken() {
     tok.placeholder = "1234~dQw4w9WgXcQ...";
     tok.size = 69;
     setText(submit, "Set Token");
-    submit.onclick = async function () {
+    submit.onclick = async function() {
+      appendLoading(content);
       let valid = await apiGet(tok.value, "validate");
       if (!valid) {
         alert("Invalid access token");
+        tabAccessToken();
         return;
       }
       localStorage.setItem("tok", tok.value);
-      accessToken();
+      tabAccessToken();
     };
   }
 }
 
-async function missing() {
+async function tabMissing() {
   if (!localStorage.tok) {
     alert("Set an access token first");
     return;
   }
-  missingRefresh();
+
+  let content = clearContent();
+
+  let refresh = document.createElement("a");
+  setText(refresh, "Refresh");
+  refresh.href = "#";
+  refresh.onclick = async function() {
+    let err = await fetchMissing(localStorage.tok);
+    if (err) {
+      alert("Failed to load: " + err);
+      return;
+    }
+    await renderMissing(JSON.parse(localStorage.courses), JSON.parse(localStorage.missing));
+    document.querySelector("#navright").appendChild(refresh);
+  };
+
+  if (!localStorage.courses || !localStorage.missing) {
+    appendLoading(content);
+    refresh.onclick();
+  } else {
+    renderMissing(JSON.parse(localStorage.courses), JSON.parse(localStorage.missing));
+  }
+  document.querySelector("#navright").appendChild(refresh);
 }
 
 window.onload = function () {
-  accessToken();
+  tabAccessToken();
 };

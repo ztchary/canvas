@@ -99,4 +99,5 @@ button{
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 2s linear infinite;
+  margin: auto;
 }

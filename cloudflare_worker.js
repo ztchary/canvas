@@ -9,7 +9,7 @@ const routes = {
   "/courses": async function(tok) {
     let courses = await fetchApi(tok, "courses");
     if (courses.errors) {
-      return {"err": true};
+      return {"err": asgns.errors[0].message};
     }
     let out = {};
     for (let c of courses) {
@@ -24,7 +24,7 @@ const routes = {
   "/missing": async function(tok) {
     let asgns = await fetchApi(tok, "missing_submissions");
     if (asgns.errors) {
-      return {"err": true};
+      return {"err": asgns.errors[0].message};
     }
     let out = {};
 
