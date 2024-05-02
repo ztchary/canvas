@@ -1,13 +1,13 @@
 async function apiGet(tok, uri) {
-  let resp = await fetch(`https://canvasapi.ztchary.com/${uri}?tok=${tok}`);
+  let resp = await fetch(`https://canvasapi.ztchary.com/${uri}?tok=${tok}&url=${localStorage.url}`);
   return await resp.json();
 }
 
-function appendLoading(content) {
-  if (document.querySelector(".loading")) return;
-  let loading = document.createElement("div");
+function appendLoading(content, cls="loading") {
+  if (document.querySelector("."+cls)) return;
+  let loading = document.createElement("p");
   content.appendChild(loading);
-  loading.classList.add("loading");
+  loading.classList.add(cls);
 }
 
 
@@ -34,8 +34,8 @@ async function fetchMissing(tok) {
   if (courses.err || missing.err) {
     return courses.err + " , " + missing.err;
   }
-  localStorage.setItem("courses", JSON.stringify(courses));
-  localStorage.setItem("missing", JSON.stringify(missing));
+  localStorage.courses = JSON.stringify(courses);
+  localStorage.missing = JSON.stringify(missing);
   return null;
 }
 
@@ -75,10 +75,11 @@ async function tabAccessToken() {
   let content = clearContent();
 
   let h1 = document.createElement("h1");
-  setText(h1, "Canvas Access Token");
   content.appendChild(h1);
   content.appendChild(document.createElement("hr"));
+
   if (localStorage.tok) {
+    setText(h1, `Welcome, ${localStorage.name}`);
     let p1 = document.createElement("p");
     let p2 = document.createElement("p");
     let reset = document.createElement("button");
@@ -88,12 +89,13 @@ async function tabAccessToken() {
     setText(p2, `Access Token: ${localStorage.tok.slice(0, 10)}...`);
     setText(reset, "Reset");
     reset.onclick = () => {
-      localStorage.removeItem("tok");
-      localStorage.removeItem("courses");
-      localStorage.removeItem("missing");
+      delete localStorage.tok;
+      delete localStorage.courses;
+      delete localStorage.missing;
       tabAccessToken();
     };
   } else {
+    setText(h1, "Canvas Access Token");
     let p = document.createElement("p");
     let tok = document.createElement("input");
     let submit = document.createElement("button");
@@ -107,13 +109,14 @@ async function tabAccessToken() {
     setText(submit, "Set Token");
     submit.onclick = async function() {
       appendLoading(content);
-      let valid = await apiGet(tok.value, "validate");
-      if (!valid) {
+      let resp = await apiGet(tok.value, "validate");
+      if (!resp.valid) {
         alert("Invalid access token");
         tabAccessToken();
         return;
       }
-      localStorage.setItem("tok", tok.value);
+      localStorage.name = resp.name;
+      localStorage.tok = tok.value;
       tabAccessToken();
     };
   }
@@ -131,17 +134,19 @@ async function tabMissing() {
   setText(refresh, "Refresh");
   refresh.href = "#";
   refresh.onclick = async function() {
+    refresh.innerHTML = "";
+    let span = document.createElement("span");
+    refresh.appendChild(span);
+    setText(span, "Refresh");
+    appendLoading(refresh, "loadingRefresh");
     let err = await fetchMissing(localStorage.tok);
     if (err) {
       alert("Failed to load: " + err);
-      return;
     }
-    await renderMissing(JSON.parse(localStorage.courses), JSON.parse(localStorage.missing));
-    document.querySelector("#navright").appendChild(refresh);
+    await tabMissing();
   };
 
   if (!localStorage.courses || !localStorage.missing) {
-    appendLoading(content);
     refresh.onclick();
   } else {
     renderMissing(JSON.parse(localStorage.courses), JSON.parse(localStorage.missing));
@@ -150,5 +155,6 @@ async function tabMissing() {
 }
 
 window.onload = function () {
+  localStorage.url ??= "canvas.instructure.com";
   tabAccessToken();
 };
